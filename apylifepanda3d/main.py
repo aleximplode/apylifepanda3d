@@ -21,12 +21,14 @@ class Life(ShowBase):
         mydir = os.path.abspath(sys.path[0])
         mydir = Filename.fromOsSpecific(mydir).getFullpath()
 
-        self.box = self.loader.loadModel(mydir + '/../models/cube')
-        self.box.reparentTo(self.render)
+        self.box = [[None for x in range(CELL_WIDTH)] for x in range(CELL_HEIGHT)]
 
-        self.box.setScale(0.25, 0.25, 0.25)
-        self.box.setPos(0, 8, 0)
+        for row in range(CELL_HEIGHT):
+            for col in range(CELL_WIDTH):
+                self.box[row][col] = self.loader.loadModel(mydir + '/../models/cube')
+                self.box[row][col].reparentTo(self.render)
 
+                self.box[row][col].setPos(col - (CELL_WIDTH / 2.0), 80, row - (CELL_HEIGHT / 2.0))
 
 #def start():
 #    pygame.init()
@@ -69,46 +71,46 @@ class Life(ShowBase):
 #        pygame.display.flip()
 #
 #
-def countSiblingCells(cells, x, y):
-    return cells[y-1][x-1] + \
-        cells[y][x-1] + \
-        cells[(y+1) % CELL_HEIGHT][x-1] + \
-        cells[y-1][x] + \
-        cells[(y+1) % CELL_HEIGHT][x] + \
-        cells[y-1][(x+1) % CELL_WIDTH] + \
-        cells[y][(x+1) % CELL_WIDTH] + \
-        cells[(y+1) % CELL_HEIGHT][(x+1) % CELL_WIDTH]
+    def countSiblingCells(self, cells, x, y):
+        return cells[y-1][x-1] + \
+            cells[y][x-1] + \
+            cells[(y+1) % CELL_HEIGHT][x-1] + \
+            cells[y-1][x] + \
+            cells[(y+1) % CELL_HEIGHT][x] + \
+            cells[y-1][(x+1) % CELL_WIDTH] + \
+            cells[y][(x+1) % CELL_WIDTH] + \
+            cells[(y+1) % CELL_HEIGHT][(x+1) % CELL_WIDTH]
 
-def processCells(cells):
-    newCells = copy.deepcopy(cells)
+    def processCells(self, cells):
+        newCells = copy.deepcopy(cells)
 
-    for row in range(CELL_HEIGHT):
-        for col in range(CELL_WIDTH):
-            neighbours = countSiblingCells(newCells, col, row)
+        for row in range(CELL_HEIGHT):
+            for col in range(CELL_WIDTH):
+                neighbours = self.countSiblingCells(newCells, col, row)
 
-            if newCells[row][col] == 1:
-                if neighbours < 2:
-                    cells[row][col] = 0
-                elif 2 <= neighbours <= 3:
-                    pass
-                elif neighbours > 3:
-                    cells[row][col] = 0
-            else:
-                if neighbours == 3:
-                    cells[row][col] = 1
+                if newCells[row][col] == 1:
+                    if neighbours < 2:
+                        cells[row][col] = 0
+                    elif 2 <= neighbours <= 3:
+                        pass
+                    elif neighbours > 3:
+                        cells[row][col] = 0
+                else:
+                    if neighbours == 3:
+                        cells[row][col] = 1
 
-#def render(screen, cells):
-#    for row in range(CELL_HEIGHT):
-#        for col in range(CELL_WIDTH):
-#            cell = pygame.Rect(col * (SCREEN_WIDTH / CELL_WIDTH), row * (SCREEN_HEIGHT / CELL_HEIGHT),
-#                               SCREEN_WIDTH / CELL_WIDTH, SCREEN_HEIGHT / CELL_HEIGHT)
-#            colour = (0, 0, 0)
-#
-#            border = 1
-#            if cells[row][col] == 1:
-#                border = 0
-#
-#            pygame.draw.rect(screen, colour, cell, border)
+    #def render(screen, cells):
+    #    for row in range(CELL_HEIGHT):
+    #        for col in range(CELL_WIDTH):
+    #            cell = pygame.Rect(col * (SCREEN_WIDTH / CELL_WIDTH), row * (SCREEN_HEIGHT / CELL_HEIGHT),
+    #                               SCREEN_WIDTH / CELL_WIDTH, SCREEN_HEIGHT / CELL_HEIGHT)
+    #            colour = (0, 0, 0)
+    #
+    #            border = 1
+    #            if cells[row][col] == 1:
+    #                border = 0
+    #
+    #            pygame.draw.rect(screen, colour, cell, border)
 
 
 app = Life()
