@@ -1,5 +1,7 @@
 from direct.showbase.ShowBase import ShowBase
 from panda3d.core import Filename
+from panda3d.core import Texture
+
 import os
 import sys
 import copy
@@ -21,57 +23,63 @@ class Life(ShowBase):
         mydir = os.path.abspath(sys.path[0])
         mydir = Filename.fromOsSpecific(mydir).getFullpath()
 
+        # configure boxes and textures
         self.box = [[None for x in range(CELL_WIDTH)] for x in range(CELL_HEIGHT)]
+        self.textureempty = self.loader.loadTexture(mydir + '/../textures/box.png')
+        self.texturefull = self.loader.loadTexture(mydir + '/../textures/boxfull.png')
+
+        self.textureempty.setMagfilter(Texture.FTLinear)
+        self.textureempty.setMinfilter(Texture.FTLinearMipmapLinear)
+        self.texturefull.setMagfilter(Texture.FTLinear)
+        self.texturefull.setMinfilter(Texture.FTLinearMipmapLinear)
 
         for row in range(CELL_HEIGHT):
             for col in range(CELL_WIDTH):
-                self.box[row][col] = self.loader.loadModel(mydir + '/../models/cube')
-                self.box[row][col].reparentTo(self.render)
+                box = self.loader.loadModel(mydir + '/../models/cube')
+                box.reparentTo(self.render)
+                box.setPos((CELL_WIDTH * -1) + (col * 2), 200, CELL_HEIGHT - (row * 2))
+                box.setTexture(self.textureempty)
 
-                self.box[row][col].setPos(col - (CELL_WIDTH / 2.0), 80, row - (CELL_HEIGHT / 2.0))
+                self.box[row][col] = box
 
-#def start():
-#    pygame.init()
-#    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), 0, 32)
-#    clock = pygame.time.Clock()
-#
-#    cells = [[0 for x in range(CELL_WIDTH)] for x in range(CELL_HEIGHT)]
-#
-#    cells[3][6] = 1
-#    cells[4][7] = 1
-#    cells[5][5] = 1
-#    cells[5][6] = 1
-#    cells[5][7] = 1
-#
-#    editMode = False
-#
-#    while True:
-#        deltaTime = clock.tick(15)
-#
-#        # Event handling
-#        for event in pygame.event.get():
-#            if event.type == pygame.QUIT:
-#                pygame.quit()
-#                sys.exit()
-#            elif event.type == pygame.KEYUP:
-#                if event.key == pygame.K_RETURN:
-#                    editMode = not editMode
-#            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and editMode:
-#                row = event.pos[1] / (SCREEN_HEIGHT / CELL_HEIGHT)
-#                col = event.pos[0] / (SCREEN_WIDTH / CELL_WIDTH)
-#                cells[row][col] = (cells[row][col] + 1) % 2
-#
-#        if not editMode:
-#            processCells(cells)
-#
-#        screen.fill(BG_COLOUR)
-#
-#        render(screen, cells)
-#
-#        pygame.display.flip()
-#
-#
-    def countSiblingCells(self, cells, x, y):
+        # configure cell data
+        self.cells = [[0 for x in range(CELL_WIDTH)] for x in range(CELL_HEIGHT)]
+        self.cells[3][6] = 1
+        self.cells[4][7] = 1
+        self.cells[5][5] = 1
+        self.cells[5][6] = 1
+        self.cells[5][7] = 1
+
+        self.editmode = False
+
+        taskMgr.add(self.start, 'start')
+
+        # setup event handling
+        self.accept('enter', self.handleenter)
+        self.accept('escape', sys.exit)
+
+    def start(self, task):
+        if not self.editmode:
+            self.processcells(self.cells)
+
+        for row in range(CELL_HEIGHT):
+            for col in range(CELL_WIDTH):
+                if self.cells[row][col] == 1:
+                    self.box[row][col].setTexture(self.texturefull)
+                else:
+                    self.box[row][col].setTexture(self.textureempty)
+
+        return task.cont
+
+    def handleenter(self):
+        self.editmode = not self.editmode
+        #    elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and editMode:
+        #        row = event.pos[1] / (SCREEN_HEIGHT / CELL_HEIGHT)
+        #        col = event.pos[0] / (SCREEN_WIDTH / CELL_WIDTH)
+        #        cells[row][col] = (cells[row][col] + 1) % 2
+
+    @staticmethod
+    def countsiblingcells(cells, x, y):
         return cells[y-1][x-1] + \
             cells[y][x-1] + \
             cells[(y+1) % CELL_HEIGHT][x-1] + \
@@ -81,14 +89,14 @@ class Life(ShowBase):
             cells[y][(x+1) % CELL_WIDTH] + \
             cells[(y+1) % CELL_HEIGHT][(x+1) % CELL_WIDTH]
 
-    def processCells(self, cells):
-        newCells = copy.deepcopy(cells)
+    def processcells(self, cells):
+        newcells = copy.deepcopy(cells)
 
         for row in range(CELL_HEIGHT):
             for col in range(CELL_WIDTH):
-                neighbours = self.countSiblingCells(newCells, col, row)
+                neighbours = self.countsiblingcells(newcells, col, row)
 
-                if newCells[row][col] == 1:
+                if newcells[row][col] == 1:
                     if neighbours < 2:
                         cells[row][col] = 0
                     elif 2 <= neighbours <= 3:
