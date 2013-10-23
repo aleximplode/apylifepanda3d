@@ -26,6 +26,9 @@ class Life(ShowBase):
         mydir = os.path.abspath(sys.path[0])
         mydir = Filename.fromOsSpecific(mydir).getFullpath()
 
+        self.bgmusic = self.loader.loadMusic(mydir + '/../sounds/bgmusic.ogg')
+        self.bgmusic.play()
+
         # Setup collision for 3d picking
         self.picker = CollisionTraverser()
         self.pq = CollisionHandlerQueue()
