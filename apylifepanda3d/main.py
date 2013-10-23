@@ -27,6 +27,9 @@ class Life(ShowBase):
     def __init__(self):
         ShowBase.__init__(self)
 
+        base.disableMouse()
+        base.setFrameRateMeter(True)
+
         mydir = os.path.abspath(sys.path[0])
         mydir = Filename.fromOsSpecific(mydir).getFullpath()
 
@@ -100,6 +103,13 @@ class Life(ShowBase):
         self.readyText = OnscreenText(text='Life', pos=(0.91, 0.7), scale=0.2, fg=(255, 255, 255, 255),
                                       shadow=(0, 0, 0, 100))
 
+    def mouserotation(self, task):
+        if not self.editmode and base.mouseWatcherNode.hasMouse():
+            self.boxnode.setH(self.worldnode, base.mouseWatcherNode.getMouseX() * 60)
+            self.boxnode.setP(self.worldnode, -base.mouseWatcherNode.getMouseY() * 60)
+
+        return task.cont
+
     def startgame(self):
         # Transition to the game start state
         taskMgr.add(self.transition, 'transition')
@@ -113,9 +123,10 @@ class Life(ShowBase):
         self.readyText.setFg((255, 255, 255, (max(0, TRANSITIONPERIOD - task.time) / TRANSITIONPERIOD)))
         self.readyText.setShadow((0, 0, 0, (max(0, TRANSITIONPERIOD - task.time) / TRANSITIONPERIOD)))
 
-        if task.time >= TRANSITIONPERIOD:
+        if task.time > TRANSITIONPERIOD:
             self.accept('enter', self.handleenter)
             self.accept('mouse1', self.selectpiece)
+            taskMgr.add(self.mouserotation, 'mouserotation')
             return task.done
         else:
             return task.cont
@@ -155,11 +166,6 @@ class Life(ShowBase):
 
     def handleenter(self):
         self.editmode = not self.editmode
-
-        if self.editmode:
-            base.disableMouse()
-        else:
-            base.enableMouse()
 
     @staticmethod
     def countsiblingcells(cells, x, y):
