@@ -1,3 +1,4 @@
+from libpanda import Point3
 from direct.showbase.ShowBase import ShowBase
 from panda3d.core import Filename
 from panda3d.core import Texture
@@ -6,6 +7,8 @@ from panda3d.core import CollisionTraverser
 from panda3d.core import CollisionHandlerQueue
 from panda3d.core import CollisionRay
 from panda3d.core import BitMask32
+from direct.gui.OnscreenText import OnscreenText
+from direct.interval.LerpInterval import LerpPosHprInterval
 import os
 import sys
 import copy
@@ -17,6 +20,7 @@ SCREEN_HEIGHT = 400
 BG_COLOUR = (255, 255, 255)
 CELL_WIDTH = 40
 CELL_HEIGHT = 40
+TRANSITIONPERIOD = 1.5
 
 
 class Life(ShowBase):
@@ -56,13 +60,16 @@ class Life(ShowBase):
         self.texturefull.setMagfilter(Texture.FTLinear)
         self.texturefull.setMinfilter(Texture.FTLinearMipmapLinear)
 
-        self.boxnode = render.attachNewNode('boxnode')
+        self.worldnode = render.attachNewNode('worldnode')
+        self.boxnode = self.worldnode.attachNewNode('boxnode')
+
+        self.worldnode.setPos(0, 200, 0)
 
         for row in range(CELL_HEIGHT):
             for col in range(CELL_WIDTH):
                 box = self.loader.loadModel(mydir + '/../models/cube')
                 box.reparentTo(self.boxnode)
-                box.setPos((CELL_WIDTH * -1) + (col * 2), 200, CELL_HEIGHT - (row * 2))
+                box.setPos((CELL_WIDTH * -1) + (col * 2), 0, CELL_HEIGHT - (row * 2))
                 box.setTexture(self.textureempty)
 
                 # Cube is the name of the polygon set in blender
@@ -83,10 +90,35 @@ class Life(ShowBase):
 
         taskMgr.add(self.start, 'start')
 
-        # setup event handling
-        self.accept('enter', self.handleenter)
+        # Setup initial event handling
         self.accept('escape', sys.exit)
-        self.accept("mouse1", self.selectpiece)
+        self.accept('enter', self.startgame)
+        self.accept('mouse1', self.startgame)
+
+        # Prep the main screen
+        self.boxnode.setPosHpr(self.worldnode, -5, -160, 0, 60, -25, 0)
+        self.readyText = OnscreenText(text='Life', pos=(0.91, 0.7), scale=0.2, fg=(255, 255, 255, 255),
+                                      shadow=(0, 0, 0, 100))
+
+    def startgame(self):
+        # Transition to the game start state
+        taskMgr.add(self.transition, 'transition')
+        interval = LerpPosHprInterval(self.boxnode, TRANSITIONPERIOD, Point3(0, 0, 0), Point3(0, 0, 0),
+                                      other=self.worldnode, blendType='easeInOut')
+        interval.start()
+
+    def transition(self, task):
+        self.ignore('enter')
+        self.ignore('mouse1')
+        self.readyText.setFg((255, 255, 255, (max(0, TRANSITIONPERIOD - task.time) / TRANSITIONPERIOD)))
+        self.readyText.setShadow((0, 0, 0, (max(0, TRANSITIONPERIOD - task.time) / TRANSITIONPERIOD)))
+
+        if task.time >= TRANSITIONPERIOD:
+            self.accept('enter', self.handleenter)
+            self.accept('mouse1', self.selectpiece)
+            return task.done
+        else:
+            return task.cont
 
     def selectpiece(self):
         if self.editmode:
