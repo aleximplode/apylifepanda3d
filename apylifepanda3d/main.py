@@ -1,4 +1,3 @@
-from libpanda import Point3
 from direct.showbase.ShowBase import ShowBase
 from panda3d.core import Filename
 from panda3d.core import Texture
@@ -7,6 +6,7 @@ from panda3d.core import CollisionTraverser
 from panda3d.core import CollisionHandlerQueue
 from panda3d.core import CollisionRay
 from panda3d.core import BitMask32
+from panda3d.core import Point3
 from direct.gui.OnscreenText import OnscreenText
 from direct.interval.LerpInterval import LerpPosHprInterval
 import os
